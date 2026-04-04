@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f7fb;
+  --foreground: #0f172a;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at top left, rgba(59, 130, 246, 0.15), transparent 28%),
+      radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 26%),
+      linear-gradient(180deg, #f8fbff 0%, #f5f7fb 100%);
+    color: var(--foreground);
+    font-family:
+      "Sora",
+      "Manrope",
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+}
+
+@layer utilities {
+  .app-shell {
+    @apply min-h-screen;
+  }
+
+  .app-container {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+  }
+
+  .section-space {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  .panel {
+    @apply rounded-[28px] border border-slate-200/70 bg-white/90 shadow-[0_18px_60px_-28px_rgba(15,23,42,0.28)] backdrop-blur;
+  }
+
+  .pill-chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-sky-200/80 bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700;
+  }
+
+  .section-title {
+    @apply text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl;
+  }
+
+  .section-copy {
+    @apply text-base leading-7 text-slate-600 sm:text-lg;
+  }
+
+  .primary-btn {
+    @apply inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-sky-700;
+  }
+
+  .secondary-btn {
+    @apply inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50;
+  }
+
+  .subtle-grid {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .auth-input {
+    @apply w-full rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-3 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:bg-white;
+  }
+}
+
+.rich-text {
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.rich-text h1,
+.rich-text h2,
+.rich-text h3,
+.rich-text h4,
+.rich-text h5,
+.rich-text h6 {
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.rich-text h2 {
+  margin: 0 0 1rem;
+  font-size: 1.65rem;
+}
+
+.rich-text p,
+.rich-text ul,
+.rich-text ol {
+  margin: 0 0 1rem;
+}
+
+.rich-text ul,
+.rich-text ol {
+  padding-left: 1.4rem;
+}
+
+.rich-text li + li {
+  margin-top: 0.45rem;
+}
