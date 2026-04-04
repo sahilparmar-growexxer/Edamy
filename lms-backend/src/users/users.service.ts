@@ -8,6 +8,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { NotificationsService } from '../notifications/notifications.service';
+import * as speakeasy from 'speakeasy';
+import * as qrcode from 'qrcode';
 
 @Injectable()
 export class UsersService {
@@ -131,6 +133,15 @@ export class UsersService {
     }
 
     const publicUser = this.toPublicUser(user);
+
+    if (user.twoFactorEnabled) {
+      return {
+        message: '2FA required',
+        requiresTwoFactor: true,
+        userId: user._id,
+      };
+    }
+
     await this.notificationsService.sendLoginNotifications({
       userId: publicUser._id,
       name: publicUser.name,
@@ -217,8 +228,133 @@ export class UsersService {
     };
   }
 
-  private toPublicUser(user: User & { password?: string }) {
-    const safeUser = { ...user, password: undefined };
+  async generateTwoFactorSecret(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    if (user.twoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled for this user.');
+    }
+
+    const secret = speakeasy.generateSecret({
+      name: `LMS (${user.email})`,
+      issuer: 'LMS App',
+    });
+
+    user.twoFactorSecret = secret.base32;
+    await user.save();
+
+    const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url!);
+
+    return {
+      secret: secret.base32,
+      qrCodeUrl,
+    };
+  }
+
+  async enableTwoFactor(userId: string, token: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    if (!user.twoFactorSecret) {
+      throw new BadRequestException('2FA secret not generated.');
+    }
+
+    if (user.twoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled.');
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token,
+      window: 2, // Allow 2 time windows (30 seconds each)
+    });
+
+    if (!verified) {
+      throw new BadRequestException('Invalid 2FA token.');
+    }
+
+    user.twoFactorEnabled = true;
+    await user.save();
+
+    return {
+      message: '2FA enabled successfully.',
+    };
+  }
+
+  async disableTwoFactor(userId: string, token: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    if (!user.twoFactorEnabled) {
+      throw new BadRequestException('2FA is not enabled.');
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret!,
+      encoding: 'base32',
+      token,
+      window: 2,
+    });
+
+    if (!verified) {
+      throw new BadRequestException('Invalid 2FA token.');
+    }
+
+    user.twoFactorEnabled = false;
+    user.twoFactorSecret = undefined;
+    await user.save();
+
+    return {
+      message: '2FA disabled successfully.',
+    };
+  }
+
+  async verifyLoginTwoFactor(userId: string, token: string) {
+    const user = await this.userModel.findById(userId).lean();
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new BadRequestException('2FA is not enabled for this user.');
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token,
+      window: 2,
+    });
+
+    if (!verified) {
+      throw new UnauthorizedException('Invalid 2FA token.');
+    }
+
+    const publicUser = this.toPublicUser(user);
+    await this.notificationsService.sendLoginNotifications({
+      userId: publicUser._id,
+      name: publicUser.name,
+      email: publicUser.email,
+      mobileNumber: publicUser.mobileNumber,
+    });
+
+    return {
+      message: 'Login successful',
+      user: publicUser,
+    };
+  }
+
+  private toPublicUser(user: UserDocument | (User & { password?: string })) {
+    const userObj = 'toObject' in user ? user.toObject() : user;
+    const safeUser = { ...userObj, password: undefined };
     return safeUser;
   }
 

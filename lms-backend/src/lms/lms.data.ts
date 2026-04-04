@@ -70,6 +70,8 @@ export type UserRecord = {
   imageUrl: string;
   role: 'student' | 'teacher' | 'admin';
   headline?: string;
+  twoFactorEnabled: boolean;
+  twoFactorSecret?: string;
 };
 
 export type TestimonialRecord = {
@@ -103,6 +105,7 @@ const users: UserRecord[] = [
       'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=400&q=80',
     role: 'teacher',
     headline: 'Senior web educator and curriculum designer',
+    twoFactorEnabled: false,
   },
   {
     _id: 'student_1',
@@ -123,6 +126,7 @@ const users: UserRecord[] = [
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
     role: 'student',
     headline: 'Frontend engineer',
+    twoFactorEnabled: false,
   },
   {
     _id: 'student_2',
@@ -138,6 +142,7 @@ const users: UserRecord[] = [
       'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
     role: 'student',
     headline: 'Product designer',
+    twoFactorEnabled: false,
   },
   {
     _id: 'student_3',
@@ -153,6 +158,7 @@ const users: UserRecord[] = [
       'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=400&q=80',
     role: 'student',
     headline: 'Data analyst',
+    twoFactorEnabled: false,
   },
 ];
 

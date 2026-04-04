@@ -43,6 +43,38 @@ export class UsersController {
     return this.usersService.login(credentials);
   }
 
+  @Post('verify-2fa')
+  verifyLoginTwoFactor(
+    @Body()
+    payload: {
+      userId: string;
+      token: string;
+    },
+  ) {
+    return this.usersService.verifyLoginTwoFactor(payload.userId, payload.token);
+  }
+
+  @Post(':id/generate-2fa')
+  generateTwoFactorSecret(@Param('id') id: string) {
+    return this.usersService.generateTwoFactorSecret(id);
+  }
+
+  @Post(':id/enable-2fa')
+  enableTwoFactor(
+    @Param('id') id: string,
+    @Body() payload: { token: string },
+  ) {
+    return this.usersService.enableTwoFactor(id, payload.token);
+  }
+
+  @Post(':id/disable-2fa')
+  disableTwoFactor(
+    @Param('id') id: string,
+    @Body() payload: { token: string },
+  ) {
+    return this.usersService.disableTwoFactor(id, payload.token);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() userData: Partial<User>) {
     return this.usersService.update(id, userData);

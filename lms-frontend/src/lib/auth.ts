@@ -12,6 +12,7 @@ export type AuthUser = {
   imageUrl: string;
   role: UserRole | "admin";
   headline?: string;
+  twoFactorEnabled: boolean;
 };
 
 export const AUTH_STORAGE_KEY = "lms-auth-user";

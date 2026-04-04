@@ -8,6 +8,9 @@ import {
   getUserNotifications,
   getUserProfile,
   updateUserProfile,
+  generateTwoFactorSecret,
+  enableTwoFactor,
+  disableTwoFactor,
 } from "@/lib/api";
 import {
   updateStoredUser,
@@ -57,6 +60,10 @@ export function AccountProfile() {
   const [courseDraft, setCourseDraft] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [twoFactorSecret, setTwoFactorSecret] = useState<string | null>(null);
+  const [twoFactorQrCode, setTwoFactorQrCode] = useState<string | null>(null);
+  const [twoFactorToken, setTwoFactorToken] = useState("");
+  const [isTwoFactorLoading, setIsTwoFactorLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -267,6 +274,56 @@ export function AccountProfile() {
       toast.error(
         error instanceof Error ? error.message : "Could not save your profile.",
       );
+    }
+  }
+
+  async function handleGenerateTwoFactor() {
+    if (!currentUser) return;
+
+    setIsTwoFactorLoading(true);
+    try {
+      const response = await generateTwoFactorSecret(currentUser._id);
+      setTwoFactorSecret(response.secret);
+      setTwoFactorQrCode(response.qrCodeUrl);
+      toast.success("2FA secret generated. Scan the QR code with your authenticator app.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate 2FA secret.");
+    } finally {
+      setIsTwoFactorLoading(false);
+    }
+  }
+
+  async function handleEnableTwoFactor() {
+    if (!currentUser || !twoFactorToken.trim()) return;
+
+    setIsTwoFactorLoading(true);
+    try {
+      await enableTwoFactor(currentUser._id, twoFactorToken.trim());
+      updateStoredUser({ twoFactorEnabled: true });
+      setTwoFactorSecret(null);
+      setTwoFactorQrCode(null);
+      setTwoFactorToken("");
+      toast.success("2FA enabled successfully.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to enable 2FA.");
+    } finally {
+      setIsTwoFactorLoading(false);
+    }
+  }
+
+  async function handleDisableTwoFactor() {
+    if (!currentUser || !twoFactorToken.trim()) return;
+
+    setIsTwoFactorLoading(true);
+    try {
+      await disableTwoFactor(currentUser._id, twoFactorToken.trim());
+      updateStoredUser({ twoFactorEnabled: false });
+      setTwoFactorToken("");
+      toast.success("2FA disabled successfully.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to disable 2FA.");
+    } finally {
+      setIsTwoFactorLoading(false);
     }
   }
 
@@ -525,6 +582,106 @@ export function AccountProfile() {
                 Save profile
               </button>
             </form>
+          </div>
+        </div>
+
+        <div className="mt-8 panel p-6 sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+              Two-Factor Authentication
+            </h2>
+            <p className="mt-2 text-slate-600">
+              Add an extra layer of security to your account with 2FA using an authenticator app.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-slate-900">
+                  {currentUser.twoFactorEnabled ? "2FA is enabled" : "2FA is disabled"}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {currentUser.twoFactorEnabled
+                    ? "Your account is protected with two-factor authentication."
+                    : "Enable 2FA to secure your account with a time-based code."}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`h-3 w-3 rounded-full ${currentUser.twoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-sm font-medium">
+                  {currentUser.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            {!currentUser.twoFactorEnabled && !twoFactorSecret && (
+              <button
+                onClick={handleGenerateTwoFactor}
+                disabled={isTwoFactorLoading}
+                className="primary-btn"
+              >
+                {isTwoFactorLoading ? "Generating..." : "Enable 2FA"}
+              </button>
+            )}
+
+            {twoFactorQrCode && (
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-6">
+                <h4 className="text-lg font-medium text-slate-900 mb-4">Scan QR Code</h4>
+                <p className="text-sm text-slate-600 mb-4">
+                  Scan this QR code with your authenticator app (like Google Authenticator, Authy, or Microsoft Authenticator).
+                </p>
+                <div className="flex justify-center mb-4">
+                  <img src={twoFactorQrCode} alt="2FA QR Code" className="max-w-48 max-h-48" />
+                </div>
+                <p className="text-xs text-slate-500 mb-4">
+                  Manual entry code: {twoFactorSecret}
+                </p>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={twoFactorToken}
+                    onChange={(e) => setTwoFactorToken(e.target.value)}
+                    placeholder="Enter 6-digit code"
+                    className="auth-input flex-1"
+                    maxLength={6}
+                  />
+                  <button
+                    onClick={handleEnableTwoFactor}
+                    disabled={isTwoFactorLoading || twoFactorToken.length !== 6}
+                    className="primary-btn"
+                  >
+                    {isTwoFactorLoading ? "Enabling..." : "Enable 2FA"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {currentUser.twoFactorEnabled && (
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-6">
+                <h4 className="text-lg font-medium text-slate-900 mb-4">Disable 2FA</h4>
+                <p className="text-sm text-slate-600 mb-4">
+                  Enter your current 2FA code to disable two-factor authentication.
+                </p>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={twoFactorToken}
+                    onChange={(e) => setTwoFactorToken(e.target.value)}
+                    placeholder="Enter 6-digit code"
+                    className="auth-input flex-1"
+                    maxLength={6}
+                  />
+                  <button
+                    onClick={handleDisableTwoFactor}
+                    disabled={isTwoFactorLoading || twoFactorToken.length !== 6}
+                    className="secondary-btn !bg-red-50 !text-red-700 !border-red-200 hover:!bg-red-100"
+                  >
+                    {isTwoFactorLoading ? "Disabling..." : "Disable 2FA"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

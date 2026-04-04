@@ -35,6 +35,17 @@ type AuthResponse = {
   user: PublicUser;
 };
 
+type TwoFactorSetupResponse = {
+  secret: string;
+  qrCodeUrl: string;
+};
+
+type TwoFactorResponse = {
+  message: string;
+  requiresTwoFactor?: boolean;
+  userId?: string;
+};
+
 type CreateCoursePayload = {
   courseTitle: string;
   category: string;
@@ -193,11 +204,27 @@ export async function getEducatorDashboard(educatorId = "educator_1") {
 }
 
 export async function loginUser(payload: AuthPayload) {
-  return postJson<AuthResponse>("/users/login", payload);
+  return postJson<AuthResponse | TwoFactorResponse>("/users/login", payload);
 }
 
 export async function signupUser(payload: SignupPayload) {
   return postJson<AuthResponse>("/users/signup", payload);
+}
+
+export async function verifyTwoFactorLogin(userId: string, token: string) {
+  return postJson<AuthResponse>("/users/verify-2fa", { userId, token });
+}
+
+export async function generateTwoFactorSecret(userId: string) {
+  return postJson<TwoFactorSetupResponse>(`/users/${userId}/generate-2fa`, {});
+}
+
+export async function enableTwoFactor(userId: string, token: string) {
+  return postJson<{ message: string }>(`/users/${userId}/enable-2fa`, { token });
+}
+
+export async function disableTwoFactor(userId: string, token: string) {
+  return postJson<{ message: string }>(`/users/${userId}/disable-2fa`, { token });
 }
 
 export async function getUserProfile(userId: string) {

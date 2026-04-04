@@ -40,6 +40,12 @@ export class User {
 
   @Prop()
   headline?: string;
+
+  @Prop({ default: false })
+  twoFactorEnabled: boolean;
+
+  @Prop()
+  twoFactorSecret?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

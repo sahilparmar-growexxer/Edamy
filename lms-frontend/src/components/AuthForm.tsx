@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AuthUser, getDefaultRouteForRole, getRoleLabel, storeUser, UserRole } from "@/lib/auth";
-import { loginUser, signupUser } from "@/lib/api";
+import { loginUser, signupUser, verifyTwoFactorLogin } from "@/lib/api";
 
 type AuthMode = "login" | "signup";
 
@@ -26,6 +26,9 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [headline, setHeadline] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [twoFactorToken, setTwoFactorToken] = useState("");
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [twoFactorUserId, setTwoFactorUserId] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,28 +36,47 @@ export function AuthForm({ mode }: AuthFormProps) {
     setError(null);
 
     try {
-      const response = isSignup
-        ? await signupUser({
-            name,
-            email,
-            mobileNumber,
-            password,
-            role,
-            headline: headline.trim() || undefined,
-          })
-        : await loginUser({ email, password, role });
+      let response;
 
-      storeUser(response.user as AuthUser);
-      toast.success(
-        isSignup
-          ? "Account created successfully."
-          : "Logged in successfully.",
-      );
-      if (!isSignup && !response.user.mobileNumber) {
-        toast("Please add your mobile number in My Account to receive course updates.");
+      if (requiresTwoFactor && twoFactorUserId) {
+        // Verify 2FA token
+        response = await verifyTwoFactorLogin(twoFactorUserId, twoFactorToken);
+      } else {
+        // Regular login or signup
+        response = isSignup
+          ? await signupUser({
+              name,
+              email,
+              mobileNumber,
+              password,
+              role,
+              headline: headline.trim() || undefined,
+            })
+          : await loginUser({ email, password, role });
       }
-      router.push(getDefaultRouteForRole(response.user));
-      router.refresh();
+
+      // Check if 2FA is required
+      if ('requiresTwoFactor' in response && response.requiresTwoFactor) {
+        setRequiresTwoFactor(true);
+        setTwoFactorUserId(response.userId!);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Successful authentication
+      if ('user' in response) {
+        storeUser(response.user as AuthUser);
+        toast.success(
+          isSignup
+            ? "Account created successfully."
+            : "Logged in successfully.",
+        );
+        if (!isSignup && !response.user.mobileNumber) {
+          toast("Please add your mobile number in My Account to receive course updates.");
+        }
+        router.push(getDefaultRouteForRole(response.user));
+        router.refresh();
+      }
     } catch (submissionError) {
       const message =
         submissionError instanceof Error
@@ -127,7 +149,11 @@ export function AuthForm({ mode }: AuthFormProps) {
                   {isSignup ? "Signup" : "Login"}
                 </p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-                  {isSignup ? `Create a ${role} account` : `Login as ${role}`}
+                  {requiresTwoFactor
+                    ? "Enter 2FA Code"
+                    : isSignup
+                    ? `Create a ${role} account`
+                    : `Login as ${getRoleLabel(role)}`}
                 </h2>
               </div>
               <Link href={isSignup ? "/login" : "/signup"} className="secondary-btn">
@@ -173,6 +199,25 @@ export function AuthForm({ mode }: AuthFormProps) {
                 />
               </label>
 
+              {requiresTwoFactor ? (
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-slate-700">2FA Code</span>
+                  <input
+                    type="text"
+                    value={twoFactorToken}
+                    onChange={(event) => setTwoFactorToken(event.target.value)}
+                    className="auth-input"
+                    placeholder="Enter 6-digit code from authenticator app"
+                    required
+                    maxLength={6}
+                    pattern="[0-9]{6}"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Enter the 6-digit code from your authenticator app
+                  </p>
+                </label>
+              ) : null}
+
               {isSignup ? (
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-slate-700">Mobile number</span>
@@ -210,12 +255,16 @@ export function AuthForm({ mode }: AuthFormProps) {
 
               <button type="submit" disabled={isSubmitting} className="primary-btn w-full disabled:opacity-70">
                 {isSubmitting
-                  ? isSignup
+                  ? requiresTwoFactor
+                    ? "Verifying..."
+                    : isSignup
                     ? "Creating account..."
                     : "Signing in..."
+                  : requiresTwoFactor
+                  ? "Verify 2FA Code"
                   : isSignup
-                    ? `Create ${getRoleLabel(role)} account`
-                    : `Login as ${getRoleLabel(role)}`}
+                  ? `Create ${getRoleLabel(role)} account`
+                  : `Login as ${getRoleLabel(role)}`}
               </button>
             </form>
           </div>
