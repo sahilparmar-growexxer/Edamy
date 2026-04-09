@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { EnrollButton } from "@/components/EnrollButton";
+import { CourseQuizSection } from "@/components/CourseQuizSection";
+import { CourseQuizBuilder } from "@/components/CourseQuizBuilder";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { getCourseById } from "@/lib/api";
@@ -165,6 +167,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
                   ))}
                 </div>
               </div>
+
+              <CourseQuizSection courseId={course._id} />
+              <CourseQuizBuilder courseId={course._id} educatorId={course.educatorId} />
             </div>
 
             <aside className="xl:sticky xl:top-28 xl:self-start">

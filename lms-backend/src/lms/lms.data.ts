@@ -37,6 +37,20 @@ export type ChapterRecord = {
   chapterContent: LectureRecord[];
 };
 
+export type QuizQuestionRecord = {
+  questionId: string;
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
+};
+
+export type QuizRecord = {
+  quizId: string;
+  title: string;
+  description?: string;
+  questions: QuizQuestionRecord[];
+};
+
 export type CourseRecord = {
   _id: string;
   category: string;
@@ -48,6 +62,7 @@ export type CourseRecord = {
   discount: number;
   isPublished: boolean;
   courseContent: ChapterRecord[];
+  quizzes: QuizRecord[];
   courseThumbnailKey: AssetKey;
   educatorId: string;
   educatorName: string;
@@ -234,6 +249,33 @@ const courses: CourseRecord[] = [
         ],
       },
     ],
+    quizzes: [
+      {
+        quizId: 'quiz_js_basics',
+        title: 'JavaScript Basics Check',
+        description: 'Test core syntax and concepts from the first module.',
+        questions: [
+          {
+            questionId: 'q_js_1',
+            question: 'Which keyword declares a block-scoped variable?',
+            options: ['var', 'let', 'def', 'const'],
+            correctOptionIndex: 1,
+          },
+          {
+            questionId: 'q_js_2',
+            question: 'Which value is NOT a JavaScript primitive?',
+            options: ['string', 'number', 'object', 'boolean'],
+            correctOptionIndex: 2,
+          },
+          {
+            questionId: 'q_js_3',
+            question: 'What method converts a JSON string into an object?',
+            options: ['JSON.parse', 'JSON.stringify', 'Object.parse', 'JSON.toObject'],
+            correctOptionIndex: 0,
+          },
+        ],
+      },
+    ],
   },
   {
     _id: 'course_python_advanced',
@@ -301,6 +343,33 @@ const courses: CourseRecord[] = [
             lectureUrl: 'https://youtu.be/tb8gHvYlCFs',
             isPreviewFree: true,
             lectureOrder: 2,
+          },
+        ],
+      },
+    ],
+    quizzes: [
+      {
+        quizId: 'quiz_py_advanced',
+        title: 'Advanced Python Quiz',
+        description: 'Check your understanding of advanced Python patterns.',
+        questions: [
+          {
+            questionId: 'q_py_1',
+            question: 'Which feature allows a function to yield multiple values over time?',
+            options: ['Decorator', 'Generator', 'Context manager', 'Comprehension'],
+            correctOptionIndex: 1,
+          },
+          {
+            questionId: 'q_py_2',
+            question: 'What keyword is used to create a context manager?',
+            options: ['with', 'using', 'context', 'manage'],
+            correctOptionIndex: 0,
+          },
+          {
+            questionId: 'q_py_3',
+            question: 'Which data structure stores unique values?',
+            options: ['list', 'tuple', 'set', 'dict'],
+            correctOptionIndex: 2,
           },
         ],
       },
@@ -376,6 +445,33 @@ const courses: CourseRecord[] = [
         ],
       },
     ],
+    quizzes: [
+      {
+        quizId: 'quiz_web_core',
+        title: 'Web Bootcamp Core Quiz',
+        description: 'Validate core HTML, CSS, and routing concepts.',
+        questions: [
+          {
+            questionId: 'q_web_1',
+            question: 'Which CSS layout module is best for 2D layouts?',
+            options: ['Flexbox', 'Grid', 'Float', 'Position'],
+            correctOptionIndex: 1,
+          },
+          {
+            questionId: 'q_web_2',
+            question: 'Which HTML element defines a navigation section?',
+            options: ['<section>', '<nav>', '<aside>', '<header>'],
+            correctOptionIndex: 1,
+          },
+          {
+            questionId: 'q_web_3',
+            question: 'Which HTTP method is typically used for updates?',
+            options: ['GET', 'POST', 'PATCH', 'HEAD'],
+            correctOptionIndex: 2,
+          },
+        ],
+      },
+    ],
   },
   {
     _id: 'course_data_science',
@@ -440,6 +536,38 @@ const courses: CourseRecord[] = [
             lectureUrl: 'https://youtu.be/ua-CiDNNj30',
             isPreviewFree: true,
             lectureOrder: 2,
+          },
+        ],
+      },
+    ],
+    quizzes: [
+      {
+        quizId: 'quiz_ds_intro',
+        title: 'Data Science Foundations',
+        description: 'Check fundamentals of data prep and storytelling.',
+        questions: [
+          {
+            questionId: 'q_ds_1',
+            question: 'Which library is most commonly used for data frames in Python?',
+            options: ['NumPy', 'Pandas', 'Matplotlib', 'Seaborn'],
+            correctOptionIndex: 1,
+          },
+          {
+            questionId: 'q_ds_2',
+            question: 'What is the main goal of data cleaning?',
+            options: [
+              'Increase model accuracy without validation',
+              'Remove errors and inconsistencies',
+              'Reduce dataset size only',
+              'Avoid visualization work',
+            ],
+            correctOptionIndex: 1,
+          },
+          {
+            questionId: 'q_ds_3',
+            question: 'Which chart best shows changes over time?',
+            options: ['Bar chart', 'Pie chart', 'Line chart', 'Scatter plot'],
+            correctOptionIndex: 2,
           },
         ],
       },
@@ -556,6 +684,10 @@ export function getSeedCourses(): CourseRecord[] {
     courseContent: course.courseContent.map((chapter) => ({
       ...chapter,
       chapterContent: chapter.chapterContent.map((lecture) => ({ ...lecture })),
+    })),
+    quizzes: course.quizzes.map((quiz) => ({
+      ...quiz,
+      questions: quiz.questions.map((question) => ({ ...question })),
     })),
   }));
 }

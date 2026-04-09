@@ -1,6 +1,8 @@
 import {
   CatalogResponse,
   Course,
+  CourseQuiz,
+  CourseQuizAttempt,
   EducatorDashboard,
   HomePageData,
   LearnerOverview,
@@ -259,6 +261,116 @@ export async function enrollInCourse(courseId: string, studentId: string) {
   return postJson<{
     message: string;
     enrollmentId: string;
-    redirectUrl: string;
+    redirectUrl: string | null;
   }>(`/courses/${courseId}/enroll`, { studentId });
+}
+
+export async function createCourseOrder(courseId: string, studentId: string) {
+  return postJson<
+    | {
+        status: "already_enrolled" | "enrolled";
+        message: string;
+        enrollmentId: string;
+        redirectUrl: string | null;
+      }
+    | {
+        status: "order_created";
+        keyId: string;
+        orderId: string;
+        amount: number;
+        currency: string;
+        courseTitle: string;
+      }
+  >(`/courses/${courseId}/create-order`, { studentId });
+}
+
+export async function verifyCoursePayment(
+  courseId: string,
+  payload: {
+    studentId: string;
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  },
+) {
+  return postJson<{
+    message: string;
+    enrollmentId: string;
+    redirectUrl: string | null;
+  }>(`/courses/${courseId}/verify-payment`, payload);
+}
+
+export async function getCourseQuizzes(courseId: string) {
+  return fetchJson<{ courseId: string; quizzes: CourseQuiz[] }>(
+    `/courses/${courseId}/quizzes`,
+    { courseId, quizzes: [] },
+  );
+}
+
+export async function getCourseQuizManagerData(courseId: string, educatorId: string) {
+  return fetchJson<{
+    courseId: string;
+    quizzes: Array<{
+      quizId: string;
+      title: string;
+      description?: string | null;
+      questions: Array<{
+        questionId: string;
+        question: string;
+        options: string[];
+        correctOptionIndex: number;
+      }>;
+    }>;
+  }>(
+    `/courses/${courseId}/quizzes/manage?educatorId=${encodeURIComponent(educatorId)}`,
+    { courseId, quizzes: [] },
+  );
+}
+
+export async function submitCourseQuizAttempt(
+  courseId: string,
+  quizId: string,
+  payload: {
+    studentId: string;
+    answers: Array<{ questionId: string; selectedIndex: number }>;
+  },
+) {
+  return postJson<{ message: string; result: CourseQuizAttempt }>(
+    `/courses/${courseId}/quizzes/${quizId}/attempt`,
+    payload,
+  );
+}
+
+export async function getCourseQuizResults(
+  courseId: string,
+  quizId: string,
+  studentId: string,
+) {
+  return fetchJson<{ courseId: string; quizId: string; attempts: CourseQuizAttempt[] }>(
+    `/courses/${courseId}/quizzes/${quizId}/results?studentId=${encodeURIComponent(studentId)}`,
+    { courseId, quizId, attempts: [] },
+  );
+}
+
+export async function updateCourseQuizzes(
+  courseId: string,
+  payload: {
+    educatorId: string;
+    quizzes: Array<{
+      quizId: string;
+      title: string;
+      description?: string;
+      questions: Array<{
+        questionId: string;
+        question: string;
+        options: string[];
+        correctOptionIndex: number;
+      }>;
+    }>;
+  },
+) {
+  return postJson<{ message: string; quizzesCount: number }>(
+    `/courses/${courseId}/quizzes`,
+    payload,
+  );
 }

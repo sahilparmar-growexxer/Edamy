@@ -36,6 +36,32 @@ export type CourseRating = {
   _id: string;
 };
 
+export type CourseQuizQuestion = {
+  questionId: string;
+  question: string;
+  options: string[];
+};
+
+export type CourseQuiz = {
+  quizId: string;
+  title: string;
+  description?: string | null;
+  questions: CourseQuizQuestion[];
+};
+
+export type CourseQuizAttempt = {
+  attemptId: string;
+  score: number;
+  total: number;
+  submittedAt: string;
+  answers: Array<{
+    questionId: string;
+    selectedIndex: number;
+    correctIndex: number;
+    isCorrect: boolean;
+  }>;
+};
+
 export type Course = {
   _id: string;
   category: string;
@@ -53,6 +79,7 @@ export type Course = {
   educatorId?: string;
   enrolledStudents?: string[];
   courseRatings?: CourseRating[];
+  quizzes?: CourseQuiz[];
   durationLabel?: string;
   lessonsCount?: number;
   progressPercent?: number;

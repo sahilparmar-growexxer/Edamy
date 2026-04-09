@@ -57,6 +57,40 @@ export class Chapter {
 
 const ChapterSchema = SchemaFactory.createForClass(Chapter);
 
+@Schema({ _id: false })
+export class QuizQuestion {
+  @Prop({ required: true })
+  questionId: string;
+
+  @Prop({ required: true })
+  question: string;
+
+  @Prop({ type: [String], default: [] })
+  options: string[];
+
+  @Prop({ required: true })
+  correctOptionIndex: number;
+}
+
+const QuizQuestionSchema = SchemaFactory.createForClass(QuizQuestion);
+
+@Schema({ _id: false })
+export class Quiz {
+  @Prop({ required: true })
+  quizId: string;
+
+  @Prop({ required: true })
+  title: string;
+
+  @Prop()
+  description?: string;
+
+  @Prop({ type: [QuizQuestionSchema], default: [] })
+  questions: QuizQuestion[];
+}
+
+const QuizSchema = SchemaFactory.createForClass(Quiz);
+
 @Schema({ timestamps: true })
 export class Course {
   @Prop({ required: true })
@@ -88,6 +122,9 @@ export class Course {
 
   @Prop({ type: [ChapterSchema], default: [] })
   courseContent: Chapter[];
+
+  @Prop({ type: [QuizSchema], default: [] })
+  quizzes: Quiz[];
 
   @Prop()
   courseThumbnailKey: string;
